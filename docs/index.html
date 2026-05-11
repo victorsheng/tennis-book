@@ -566,7 +566,7 @@
 <body>
   <div class="page">
     <header class="topbar">
-      <a class="brand" href="#library" aria-label="tennis-book">
+      <a class="brand" href="#library" aria-label="tennis-book" id="brand-link">
         <span class="brand-mark">T</span>
         <span>
           <span class="brand-name">tennis-book</span>
@@ -574,8 +574,8 @@
         </span>
       </a>
       <div class="top-actions">
-        <span class="count-pill" data-i18n-count="topCount">17 份 PDF</span>
-        <div class="lang-switch" aria-label="Language">
+        <span class="count-pill" data-i18n-count="topCount"></span>
+        <div class="lang-switch" id="lang-switch">
           <button class="lang-button" type="button" data-lang="zh" aria-pressed="true">中文</button>
           <button class="lang-button" type="button" data-lang="en" aria-pressed="false">English</button>
         </div>
@@ -593,10 +593,10 @@
             <a class="button-link button-secondary" href="https://github.com/victorsheng/tennis-book" rel="noopener noreferrer" data-i18n="repoAction">GitHub 仓库</a>
           </div>
         </div>
-        <aside class="hero-panel" aria-label="Library overview">
+        <aside class="hero-panel" id="hero-panel">
           <div class="stat-grid">
             <div class="stat">
-              <span class="stat-value" id="stat-books">17</span>
+              <span class="stat-value" id="stat-books"></span>
               <span class="stat-label" data-i18n="statBooks">PDF 资料</span>
             </div>
             <div class="stat">
@@ -623,9 +623,9 @@
         <div class="toolbar">
           <label class="search-field">
             <span class="search-label" data-i18n="searchLabel">搜索</span>
-            <input id="search-input" type="search" autocomplete="off" aria-label="Search books" />
+            <input id="search-input" type="search" autocomplete="off" />
           </label>
-          <div class="filter-row" id="category-filters" aria-label="Book categories"></div>
+          <div class="filter-row" id="category-filters"></div>
         </div>
 
         <div class="book-grid" id="book-grid"></div>
@@ -672,7 +672,10 @@
       const UI = {
         zh: {
           brandSubtitle: "Tennis reading archive",
-          topCount: "17 份 PDF",
+          topCount: (count) => `${count} 份 PDF`,
+          brandAriaLabel: "tennis-book 书目资料库",
+          languageSwitcherLabel: "语言切换",
+          libraryOverviewLabel: "资料库概览",
           eyebrow: "个人网球资料馆",
           heroTitle: "网球电子书与训练资料库",
           heroIntro: "整理网球技术、专项训练、比赛心理、名将传记与运动科学资料，给学习者一条清晰的阅读入口。",
@@ -684,15 +687,21 @@
           libraryTitle: "书目资料库",
           libraryNote: "按书名、主题、标签或简介快速找到下一份资料。",
           searchLabel: "搜索",
+          searchInputLabel: "搜索书目",
+          categoryFiltersLabel: "书目分类",
           emptyTitle: "没有找到匹配资料",
           emptyBody: "换一个关键词，或切回“全部”分类再试。",
           footerText: "本站由 GitHub Pages 托管。PDF 通过 Raw 链接从仓库直链下载；请遵守版权，仅限个人学习使用。",
-          download: "下载 PDF",
+          openPdf: "打开 PDF",
+          openPdfAriaLabel: (title) => `打开《${title}》PDF`,
           result: (count, total) => `显示 ${count} / ${total} 本`
         },
         en: {
           brandSubtitle: "Tennis reading archive",
-          topCount: "17 PDFs",
+          topCount: (count) => `${count} PDFs`,
+          brandAriaLabel: "tennis-book library",
+          languageSwitcherLabel: "Language switcher",
+          libraryOverviewLabel: "Library overview",
           eyebrow: "Personal tennis archive",
           heroTitle: "Tennis Books & Training Library",
           heroIntro: "A curated collection of tennis technique, structured practice, match mindset, player stories, and body-care resources for focused study.",
@@ -704,10 +713,13 @@
           libraryTitle: "Library",
           libraryNote: "Search by title, topic, tag, or summary to find the next resource.",
           searchLabel: "Search",
+          searchInputLabel: "Search books",
+          categoryFiltersLabel: "Book categories",
           emptyTitle: "No matching resources",
           emptyBody: "Try another keyword or switch back to All.",
           footerText: "Hosted with GitHub Pages. PDFs are downloaded through Raw links from the repository; please respect copyright and use them for personal study only.",
-          download: "Download PDF",
+          openPdf: "Open PDF",
+          openPdfAriaLabel: (title) => `Open PDF for ${title}`,
           result: (count, total) => `${count} of ${total} shown`
         }
       };
@@ -856,9 +868,12 @@
 
       const nodes = {
         html: document.documentElement,
+        brandLink: document.getElementById("brand-link"),
         translatable: document.querySelectorAll("[data-i18n]"),
         topCount: document.querySelector("[data-i18n-count='topCount']"),
+        langSwitch: document.getElementById("lang-switch"),
         langButtons: document.querySelectorAll(".lang-button"),
+        heroPanel: document.getElementById("hero-panel"),
         pathChips: document.getElementById("path-chips"),
         categoryFilters: document.getElementById("category-filters"),
         searchInput: document.getElementById("search-input"),
@@ -906,9 +921,14 @@
           node.textContent = ui[key];
         });
 
-        nodes.topCount.textContent = ui.topCount;
+        nodes.topCount.textContent = ui.topCount(BOOKS.length);
         nodes.statBooks.textContent = BOOKS.length;
         nodes.statCategories.textContent = CATEGORY_ORDER.length - 1;
+        nodes.brandLink.setAttribute("aria-label", ui.brandAriaLabel);
+        nodes.langSwitch.setAttribute("aria-label", ui.languageSwitcherLabel);
+        nodes.heroPanel.setAttribute("aria-label", ui.libraryOverviewLabel);
+        nodes.searchInput.setAttribute("aria-label", ui.searchInputLabel);
+        nodes.categoryFilters.setAttribute("aria-label", ui.categoryFiltersLabel);
 
         nodes.langButtons.forEach((button) => {
           const active = button.dataset.lang === currentLang;
@@ -993,9 +1013,10 @@
         const download = document.createElement("a");
         download.className = "download-link";
         download.href = RAW_BASE + encodeURIComponent(book.file);
-        download.download = "";
+        download.target = "_blank";
         download.rel = "noopener noreferrer";
-        download.textContent = UI[currentLang].download;
+        download.textContent = UI[currentLang].openPdf;
+        download.setAttribute("aria-label", UI[currentLang].openPdfAriaLabel(book.title[currentLang]));
 
         const audience = document.createElement("span");
         audience.className = "audience";
